@@ -1,6 +1,6 @@
 package org.project.server;
 
-import org.project.server.game.PlayersThread;
+import org.project.server.game.PlayerThread;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,8 +19,8 @@ public class TCPServerMain {
             Socket socket = serverSocket.accept(); // Accept a new client connection
 
             // Create a new thread to handle the connected client
-            PlayersThread playersThread = new PlayersThread(socket, this);
-            Thread thread = new Thread(playersThread);
+            PlayerThread playerThread = new PlayerThread(socket, this);
+            Thread thread = new Thread(playerThread);
             thread.start();
         }
     }
@@ -30,5 +30,16 @@ public class TCPServerMain {
     // Increment and return the unique client number
     public int getClientNumber() {
         return clientNumber++;
+    }
+
+
+    public static void main(String[] args) {
+
+        try {
+            new TCPServerMain(); // Start the server
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
