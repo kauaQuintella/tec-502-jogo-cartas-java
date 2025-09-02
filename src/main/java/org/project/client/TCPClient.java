@@ -8,48 +8,43 @@ import java.util.Scanner;
 
 public class TCPClient {
 
-    private Socket socket; // Client socket
+    public TCPClient() throws IOException {
+        Socket socket = new Socket("localhost", 2020);
+        System.out.println("Conectado ao servidor.");
 
-    TCPClient() throws IOException {
+        // Thread para ouvir o servidor
+        new Thread(new ServerListener(socket)).start();
 
-        // Connect to the server at localhost on port 2020
-        socket = new Socket("localhost", 2020);
-
-        System.out.println("Successfully connected to the server.");
-
-        // Set up input and output streams for communication
-        BufferedReader in_socket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        PrintWriter out_socket = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+        // A thread principal envia os inputs do utilizador
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         Scanner keyboard = new Scanner(System.in);
-
-        // Receive and display the server's welcome message
-        String message = in_socket.readLine();
-        System.out.println("Server says: " + message);
-
-        // Send a message to the server
-        message = keyboard.nextLine();
-        out_socket.println(message);
-
-        // Close the connection
-        this.logout();
+        while (true) {
+            String command = keyboard.nextLine();
+            out.println(command);
+        }
     }
 
-    public void logout() {
-        try {
-            // Close the connection
-            socket.close();
-            System.out.println("Port 2020 closed successfully.");
+    // Classe interna para ouvir as mensagens do servidor
+    private static class ServerListener implements Runnable {
+        private final Socket socket;
+        public ServerListener(Socket socket) { this.socket = socket; }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        @Override
+        public void run() {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                String serverMessage;
+                while ((serverMessage = in.readLine()) != null) {
+                    System.out.println("Servidor: " + serverMessage);
+                }
+            } catch (IOException e) {
+                System.out.println("Desconectado do servidor.");
+            }
         }
     }
 
     public static void main(String[] args) {
-
         try {
-            new TCPClient(); // Start the client
-
+            new TCPClient();
         } catch (Exception e) {
             e.printStackTrace();
         }
