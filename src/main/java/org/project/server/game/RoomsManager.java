@@ -1,6 +1,6 @@
 package org.project.server.game;
 
-import org.project.server.utils.MessageServer;
+import org.project.server.utils.message.MessageServer;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

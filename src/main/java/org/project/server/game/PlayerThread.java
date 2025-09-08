@@ -1,105 +1,108 @@
 package org.project.server.game;
 
-import org.project.server.TCPServerMain;
+import org.project.server.TCPServerMain; // Remova esta dependência se não a usar
 import org.project.server.game.classes.User;
 import org.project.server.utils.GsonSingleton;
-import org.project.server.utils.MessageServer;
-import org.project.server.utils.contents.CommandContent;
-import org.project.server.utils.contents.Content;
-import org.project.server.utils.contents.PlayerActionContent;
+import org.project.server.utils.message.MessageServer;
+import org.project.server.utils.message.contents.CommandContent;
+import org.project.server.utils.message.contents.Content;
+import org.project.server.utils.message.contents.LoginContent;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.UUID;
 
 public class PlayerThread implements Runnable {
     private final Socket socket;
-    private final int clientNumber;
-    private final User user;
+    private User user; // O User será definido após o login
     private final BufferedReader in;
     private final PrintWriter out;
+    private int clientNumber;
 
-    private Content content;
-
-    public PlayerThread(Socket socket, TCPServerMain tcpServerMain, User user) throws IOException {
+    public PlayerThread(Socket socket) throws IOException {
         this.socket = socket;
-        this.clientNumber = tcpServerMain.getClientNumber();
-        this.user = user; // Agora o User é parte fundamental da Thread
-
+        // IMPORTANTE: Nenhum I/O de rede aqui. Apenas inicialização.
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new PrintWriter(socket.getOutputStream(), true);
+        UUID uuid = UUID.randomUUID();
+        clientNumber = uuid.toString().hashCode();
     }
 
-    public int getClientNumber() {return clientNumber;}
-
-    public void sendMessageToClient(String message) throws IOException {
-        if (out != null && !socket.isClosed()) {
-            out.println(message);
-        }
-    }
+    public String getClientNumber () {return clientNumber+"";}
+    // Getters para a GameSession usar
+    public User getUser() { return user; }
 
     @Override
     public void run() {
         try {
-            // ... configuração de in_socket e out_socket ...
+            // ETAPA 1: Boas-vindas e Pedido de Login
+            sendMessage(new CommandContent("Bem-vindo! Por favor, envie os seus dados de login."));
 
-            out.println("Bem-vindo! Digite 'JOGAR' para entrar na fila.");
+            // ETAPA 2: Aguardar e Processar a Mensagem de Login
+            MessageServer loginMsg = receiveMessage();
+            Content receivedContent = loginMsg.getContent();
 
-            String command = in.readLine();
-            if ("JOGAR".equalsIgnoreCase(command)) {
-                // A thread se registra no GameManager
-                RoomsManager.getInstance().joinWaitingQueue(this);
-                out.println("Você está na fila. Aguardando oponente...");
-
-                // A thread agora precisa esperar o jogo começar.
-                // (A lógica de jogo será movida para outra classe)
-
+            if (receivedContent instanceof LoginContent) {
+                LoginContent loginData = (LoginContent) receivedContent;
+                this.user = loginData.getUser(); // Associa o User enviado pelo cliente a esta Thread
+                System.out.println("Jogador '" + user.getNickname() + "' fez login com sucesso.");
+                sendMessage(new CommandContent("Login bem-sucedido! Digite 'JOGAR' para encontrar uma partida."));
             } else {
-                out.println("Comando inválido.");
+                // Se a primeira mensagem não for de login, é um erro de protocolo.
+                sendMessage(new CommandContent("ERRO: A primeira mensagem deve ser de login."));
+                stop();
+                return; // Termina a thread
             }
 
-        } catch (Exception e) {
-            // Lógica para remover o jogador da fila se ele desconectar
-            System.out.println("Cliente " + clientNumber + " desconectou.");
+            // ETAPA 3: Loop de Comandos Pós-Login
+            while (socket.isConnected() && !socket.isClosed()) {
+                MessageServer clientMsg = receiveMessage();
+                Content commandContent = clientMsg.getContent();
+
+                if (commandContent instanceof CommandContent) {
+                    CommandContent command = (CommandContent) commandContent;
+                    if ("JOGAR".equalsIgnoreCase(command.getCommand())) {
+                        sendMessage(new CommandContent("Você está na fila. Aguardando oponente..."));
+                        RoomsManager.getInstance().joinWaitingQueue(this);
+                        // A thread vai agora ser controlada pela GameSession.
+                        // Podemos quebrar o loop aqui, pois a GameSession assume o controlo.
+                        break;
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("Jogador " + (user != null ? user.getNickname() : "desconhecido") + " desconectou-se.");
+        } finally {
+            stop();
         }
+    }
+
+    // --- MÉTODOS DE AJUDA PARA COMUNICAÇÃO ---
+    public void sendMessage(Content content) {
+        MessageServer message = new MessageServer(this.user != null ? this.user.getNickname() : "Servidor", content);
+        String jsonMessage = GsonSingleton.INSTANCE.getGson().toJson(message);
+        out.println(jsonMessage);
+    }
+
+    public MessageServer receiveMessage() throws IOException {
+        String jsonMessage = in.readLine();
+        if (jsonMessage == null) {
+            throw new IOException("O cliente fechou a conexão.");
+        }
+        return GsonSingleton.INSTANCE.getGson().fromJson(jsonMessage, MessageServer.class);
     }
 
     public void stop() {
         try {
-            // Close the connection
-            socket.close();
-            System.out.println("Client " + clientNumber + " " + socket.getInetAddress() + " has disconnected.");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void waitingList() {
-        try {
-            int clientNumber = tcpServerMain.getClientNumber();
-            System.out.println("Client " + clientNumber + " at " + socket.getInetAddress() + " has connected.");
-
-            // Set up input and output streams for client communication
-            BufferedReader in_socket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out_socket = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-
-            // Initial message to the client
-            out_socket.println("Type your card!: ");
-
-            // Read and print the client's message
-            String message = in_socket.readLine();
-            System.out.println("Client says: " + message);
-            Thread.sleep(2000);
-
-            // Close the connection
-            socket.close();
-            System.out.println("Client " + clientNumber + " " + socket.getInetAddress() + " has disconnected.");
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            // Ignorar erros ao fechar, pois já estamos a encerrar
         }
     }
 }

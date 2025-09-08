@@ -27,8 +27,6 @@ import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.project.client.utils.contents.Content;
-import org.project.server.utils.contents.CommandContent;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;

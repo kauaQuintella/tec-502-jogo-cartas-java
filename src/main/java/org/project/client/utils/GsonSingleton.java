@@ -3,30 +3,27 @@ package org.project.client.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.project.client.libs.RuntimeTypeAdapterFactory;
-import org.project.client.utils.contents.*;
-// Se for usar a abordagem de polimorfismo, importe o adapter aqui
+import org.project.client.utils.message.contents.CommandContent;
+import org.project.client.utils.message.contents.Content;
+import org.project.client.utils.message.contents.LoginContent;
+import org.project.client.utils.message.contents.PlayerActionContent;
 
 public enum GsonSingleton {
-    INSTANCE; // A única instância da nossa enum
+    INSTANCE;
 
     private final Gson gson;
 
     GsonSingleton() {
-        // O construtor da enum é chamado apenas uma vez pela JVM, garantindo o Singleton.
-
-        // Se precisar de configuração especial, use o GsonBuilder:
-        // Crie a "fábrica" que diferencia as subclasses de Content
+        // Cria a "fábrica" que diferencia as subclasses de Content
         RuntimeTypeAdapterFactory<Content> adapter = RuntimeTypeAdapterFactory
                 .of(Content.class, "type") // O campo "type" no JSON dirá qual é a classe
-                .registerSubtype(PlayerActionContent.class);
+                .registerSubtype(CommandContent.class)
+                .registerSubtype(PlayerActionContent.class)
+                .registerSubtype(LoginContent.class); // Não se esqueça de registar TODOS os subtipos
 
-        // Crie o Gson com este adaptador
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapterFactory(adapter)
-                .create();
-
+        // CORREÇÃO: Atribua a instância configurada diretamente à variável da classe.
         this.gson = new GsonBuilder()
-                // .registerTypeAdapterFactory(adapter) // Adicione a sua configuração aqui
+                .registerTypeAdapterFactory(adapter)
                 .create();
     }
 

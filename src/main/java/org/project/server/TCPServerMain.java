@@ -19,19 +19,11 @@ public class TCPServerMain {
             Socket socket = serverSocket.accept(); // Accept a new client connection
 
             // Create a new thread to handle the connected client
-            PlayerThread playerThread = new PlayerThread(socket, this);
+            PlayerThread playerThread = new PlayerThread(socket);
             Thread thread = new Thread(playerThread);
             thread.start();
         }
     }
-
-    private int clientNumber = 1;
-
-    // Increment and return the unique client number
-    public int getClientNumber() {
-        return clientNumber++;
-    }
-
 
     public static void main(String[] args) {
 
