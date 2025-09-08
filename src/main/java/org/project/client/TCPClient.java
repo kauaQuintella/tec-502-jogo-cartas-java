@@ -47,11 +47,21 @@ public class TCPClient {
 
         // Loop para enviar comandos pós-login
         while (true) {
-            String commandText = keyboard.nextLine();
-            CommandContent commandContent = new CommandContent(commandText);
-            MessageClient commandMessage = new MessageClient(nickname, commandContent);
-            String commandJson = GsonSingleton.INSTANCE.getGson().toJson(commandMessage);
-            out.println(commandJson);
+            String commandText = keyboard.nextLine().toUpperCase(); // Converte para maiúsculas para facilitar
+
+            // Se o comando for uma das jogadas válidas, envia como PlayerActionContent
+            if (commandText.equals("FOGO") || commandText.equals("AGUA") || commandText.equals("NATUREZA")) {
+                PlayerActionContent actionContent = new PlayerActionContent(commandText);
+                MessageClient actionMessage = new MessageClient(nickname, actionContent);
+                String actionJson = GsonSingleton.INSTANCE.getGson().toJson(actionMessage);
+                out.println(actionJson);
+            } else {
+                // Para outros comandos como "JOGAR", envia como CommandContent
+                CommandContent commandContent = new CommandContent(commandText);
+                MessageClient commandMessage = new MessageClient(nickname, commandContent);
+                String commandJson = GsonSingleton.INSTANCE.getGson().toJson(commandMessage);
+                out.println(commandJson);
+            }
         }
     }
 

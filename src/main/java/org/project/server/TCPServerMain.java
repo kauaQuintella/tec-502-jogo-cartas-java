@@ -11,8 +11,8 @@ public class TCPServerMain {
     public TCPServerMain() throws IOException {
 
         // Create a server socket listening on port 2020
-        ServerSocket serverSocket = new ServerSocket(2020);
-        System.out.println("Port 2020 is open");
+        ServerSocket serverSocket = new ServerSocket(2020, 50, java.net.InetAddress.getByName("0.0.0.0"));
+        System.out.println("Servidor iniciado em 0.0.0.0 na porta 2020. Aguardando conexões...");
 
         // Loop to continuously listen for new client connections
         while (true) {
