@@ -4,20 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Inventory {
+    private final List<Skin> skins; // Alterado para List<Skin>
 
-    private List<String> skins;
-
-    public Inventory(String[] skins) {
+    public Inventory() {
         this.skins = new ArrayList<>();
     }
 
-    public List<String> getSkins() {return skins;}
-    public void setSkins(List<String> skins) {this.skins = skins;}
+    public List<Skin> getSkins() { return skins; }
 
-    public void addSkin (String skin){
+    public void addSkin (Skin skin) { // Alterado para aceitar Skin
         this.skins.add(skin);
     }
-
-
-
 }

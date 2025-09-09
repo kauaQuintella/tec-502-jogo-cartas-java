@@ -1,18 +1,21 @@
 package org.project.server.game;
 
 import org.project.server.TCPServerMain; // Remova esta dependência se não a usar
+import org.project.server.game.classes.Skin;
 import org.project.server.game.classes.User;
 import org.project.server.utils.GsonSingleton;
 import org.project.server.utils.message.MessageServer;
 import org.project.server.utils.message.contents.CommandContent;
 import org.project.server.utils.message.contents.Content;
 import org.project.server.utils.message.contents.LoginContent;
+import org.project.server.utils.message.contents.OpenPackResultContent;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.UUID;
 
 public class PlayerThread implements Runnable {
@@ -70,14 +73,23 @@ public class PlayerThread implements Runnable {
                         // A thread vai agora ser controlada pela GameSession.
                         // Podemos quebrar o loop aqui, pois a GameSession assume o controlo.
                         break;
+                    } else if ("ABRIR".equalsIgnoreCase(command.getCommand())) {
+                        Optional<Skin> resultado = SkinsManager.getInstance().abrirPacote(this.user);
+
+                        if (resultado.isPresent()) {
+                            sendMessage(new OpenPackResultContent(resultado.get(), "Parabéns! Você adquiriu uma nova skin!"));
+                        } else {
+                            sendMessage(new OpenPackResultContent(null, "Que pena! Não há mais skins disponíveis no estoque."));
+                        }
                     }
                 }
             }
 
         } catch (IOException e) {
-            System.out.println("Jogador " + (user != null ? user.getNickname() : "desconhecido") + " desconectou-se.");
-        } finally {
-            stop();
+            String nickname = (user != null) ? user.getNickname() : "desconhecido (" + getClientNumber() + ")";
+            System.out.println("Jogador " + nickname + " desconectou-se durante o lobby.");
+            // NOTA: Se o jogador se desconectar aqui, precisamos de uma forma de o remover da fila
+            // se ele já tiver entrado. Para já, esta mensagem é suficiente.
         }
     }
 

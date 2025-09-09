@@ -3,10 +3,7 @@ package org.project.client;
 import org.project.client.gameClient.classes.User;
 import org.project.client.utils.GsonSingleton;
 import org.project.client.utils.message.MessageClient;
-import org.project.client.utils.message.contents.CommandContent;
-import org.project.client.utils.message.contents.Content;
-import org.project.client.utils.message.contents.LoginContent;
-import org.project.client.utils.message.contents.PlayerActionContent;
+import org.project.client.utils.message.contents.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -97,6 +94,13 @@ public class TCPClient {
                         // Embora o cliente não deva receber um LoginContent, é uma boa prática estar preparado
                         System.out.println("[SISTEMA]: Informação de login recebida.");
 
+                    } else if (content instanceof OpenPackResultContent) {
+                        OpenPackResultContent resultado = (OpenPackResultContent) content;
+                        if (resultado.getSkinAdquirida() != null) {
+                            System.out.println("[LOJA]: " + resultado.getMensagem() + " -> " + resultado.getSkinAdquirida().getNome() + " (" + resultado.getSkinAdquirida().getRaridade() + ")");
+                        } else {
+                            System.out.println("[LOJA]: " + resultado.getMensagem());
+                        }
                     } else {
                         // Se for um tipo de conteúdo desconhecido, imprima o JSON para depuração
                         System.out.println("[DEBUG]: " + serverJson);
