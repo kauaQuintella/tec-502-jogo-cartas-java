@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Define o serviço do servidor
+  servidor:
+    build:
+      context: .
+      dockerfile: server.Dockerfile
+    ports:
+      # Mapeia a porta 2020 do contêiner para a porta 2020 da sua máquina
+      - "2020:2020"
+    # Dá um nome de anfitrião (hostname) fixo ao servidor na rede do Docker
+    hostname: servidor-jogo
+    networks:
+      - rede-jogo
+
+  # Define o serviço do cliente
+  cliente:
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+    # Depende do servidor, o docker-compose vai iniciar o servidor primeiro
+    depends_on:
+      - servidor
+    # Mantém o terminal interativo para que você possa digitar os comandos
+    stdin_open: true
+    tty: true
+    networks:
+      - rede-jogo
+
+# Define a rede virtual que os contêineres vão partilhar
+networks:
+  rede-jogo:
+    driver: bridge

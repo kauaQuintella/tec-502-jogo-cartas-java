@@ -17,7 +17,8 @@ public enum GsonSingleton {
                 .registerSubtype(CommandContent.class)
                 .registerSubtype(PlayerActionContent.class)
                 .registerSubtype(LoginContent.class) // Não se esqueça de registar TODOS os subtipos
-                .registerSubtype(OpenPackResultContent.class);
+                .registerSubtype(OpenPackResultContent.class)
+                .registerSubtype(PingContent.class);
 
         // CORREÇÃO: Atribua a instância configurada diretamente à variável da classe.
         this.gson = new GsonBuilder()

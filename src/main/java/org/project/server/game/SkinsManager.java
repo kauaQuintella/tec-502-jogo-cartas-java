@@ -15,15 +15,21 @@ public class SkinsManager {
     private SkinsManager() {
         // Inicializa o "estoque" com algumas skins.
         // Skins Raras
-        skinsDisponiveis.add(new Skin("FOGO_01", "Fogo Infernal", "Raro"));
-        skinsDisponiveis.add(new Skin("AGUA_01", "Tsunami", "Raro"));
-        skinsDisponiveis.add(new Skin("NATUREZA_01", "Avatar da Floresta", "Raro"));
-
+        for (int i = 0; i < 50; i++) {
+            skinsDisponiveis.add(new Skin("FOGO_R", "Fogo Infernal", "Raro"));
+            skinsDisponiveis.add(new Skin("AGUA_R", "Tsunami", "Raro"));
+            skinsDisponiveis.add(new Skin("NATUREZA_R", "Avatar da Floresta", "Raro"));
+        }
         // Skins Comuns
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 140; i++) {
             skinsDisponiveis.add(new Skin("FOGO_C" + i, "Chama Simples", "Comum"));
             skinsDisponiveis.add(new Skin("AGUA_C" + i, "Gota de Orvalho", "Comum"));
             skinsDisponiveis.add(new Skin("NATUREZA_C" + i, "Folha Verdejante", "Comum"));
+        }
+        for (int i = 0; i < 10; i++) {
+            skinsDisponiveis.add(new Skin("FOGO_L", "Hades", "Lendário"));
+            skinsDisponiveis.add(new Skin("AGUA_L", "Neptuno", "Lendário"));
+            skinsDisponiveis.add(new Skin("NATUREZA_L", "Gaia", "Lendário"));
         }
 
         // Embaralha o estoque para que a ordem seja aleatória

@@ -11,6 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class MatchmakingConcurrencyTest {
 
     @Test
@@ -27,8 +29,10 @@ public class MatchmakingConcurrencyTest {
         // Dá um pequeno tempo para o servidor iniciar completamente
         Thread.sleep(1000);
 
+        long startTime = System.currentTimeMillis(); // MARCA O INÍCIO
+
         // Número de clientes a simular (deve ser um número par)
-        int numberOfClients = 10;
+        int numberOfClients = 100;
         ExecutorService clientExecutor = Executors.newFixedThreadPool(numberOfClients);
 
         System.out.println("Iniciando " + numberOfClients + " clientes para teste de concorrência...");
@@ -62,7 +66,18 @@ public class MatchmakingConcurrencyTest {
         // Espera os clientes terminarem
         clientExecutor.shutdown();
         // Espera no máximo 1 minuto para o teste completar
-        clientExecutor.awaitTermination(1, TimeUnit.MINUTES);
+        assertTrue(clientExecutor.awaitTermination(1, TimeUnit.MINUTES), "O teste excedeu o tempo limite.");
+
+        long endTime = System.currentTimeMillis(); // MARCA O FIM
+
+        long totalTime = endTime - startTime;
+        double throughput = (double) numberOfClients / (totalTime / 1000.0); // Clientes por segundo
+
+        System.out.println("--- RESULTADOS DE DESEMPENHO ---");
+        System.out.println("Clientes Simulados: " + numberOfClients);
+        System.out.println("Tempo Total: " + totalTime + " ms");
+        System.out.printf("Vazão (Throughput): %.2f aberturas de pacote por segundo%n", throughput);
+        System.out.println("---------------------------------");
 
         System.out.println("Teste de concorrência finalizado.");
         // Para um teste JUnit real, você adicionaria asserções aqui (Assert.assertTrue(...))

@@ -1,6 +1,6 @@
 package org.project.server.game;
 
-import org.project.server.TCPServerMain; // Remova esta dependência se não a usar
+import org.project.server.utils.message.contents.PingContent;
 import org.project.server.game.classes.Skin;
 import org.project.server.game.classes.User;
 import org.project.server.utils.GsonSingleton;
@@ -52,7 +52,7 @@ public class PlayerThread implements Runnable {
                 LoginContent loginData = (LoginContent) receivedContent;
                 this.user = loginData.getUser(); // Associa o User enviado pelo cliente a esta Thread
                 System.out.println("Jogador '" + user.getNickname() + "' fez login com sucesso.");
-                sendMessage(new CommandContent("Login bem-sucedido! Digite 'JOGAR' para encontrar uma partida."));
+                sendMessage(new CommandContent("Login bem-sucedido! Digite 'JOGAR' para encontrar uma partida, 'ABRIR' para obter uma skin ou 'PING' para verificar a latência do servidor."));
             } else {
                 // Se a primeira mensagem não for de login, é um erro de protocolo.
                 sendMessage(new CommandContent("ERRO: A primeira mensagem deve ser de login."));
@@ -82,7 +82,10 @@ public class PlayerThread implements Runnable {
                             sendMessage(new OpenPackResultContent(null, "Que pena! Não há mais skins disponíveis no estoque."));
                         }
                     }
-                }
+                } else if (commandContent instanceof PingContent) {
+                // Se recebermos um Ping, simplesmente o devolvemos como um Pong.
+                sendMessage(commandContent);
+            }
             }
 
         } catch (IOException e) {

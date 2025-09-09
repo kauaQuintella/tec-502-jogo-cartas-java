@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class TCPClient {
 
     public TCPClient() throws IOException {
-        Socket socket = new Socket("localhost", 2020);
+        Socket socket = new Socket("servidor-jogo", 2020);
         System.out.println("Conectado ao servidor.");
 
         // A thread principal envia os inputs do utilizador
@@ -52,6 +52,12 @@ public class TCPClient {
                 MessageClient actionMessage = new MessageClient(nickname, actionContent);
                 String actionJson = GsonSingleton.INSTANCE.getGson().toJson(actionMessage);
                 out.println(actionJson);
+            } else if (commandText.equals("PING")) {
+                // Comando PING
+                PingContent pingContent = new PingContent(System.currentTimeMillis());
+                MessageClient pingMessage = new MessageClient(nickname, pingContent);
+                String pingJson = GsonSingleton.INSTANCE.getGson().toJson(pingMessage);
+                out.println(pingJson);
             } else {
                 // Para outros comandos como "JOGAR", envia como CommandContent
                 CommandContent commandContent = new CommandContent(commandText);
@@ -101,6 +107,13 @@ public class TCPClient {
                         } else {
                             System.out.println("[LOJA]: " + resultado.getMensagem());
                         }
+                    } else if (content instanceof PingContent) {
+                        // Recebemos um Pong de volta do servidor
+                        PingContent pongContent = (PingContent) content;
+                        long originalTimestamp = pongContent.getTimestamp();
+                        long latencia = System.currentTimeMillis() - originalTimestamp;
+                        System.out.println("[SISTEMA]: Pong! Atraso da comunicação: " + latencia + " ms");
+
                     } else {
                         // Se for um tipo de conteúdo desconhecido, imprima o JSON para depuração
                         System.out.println("[DEBUG]: " + serverJson);
