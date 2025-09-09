@@ -9,32 +9,36 @@ import java.util.List;
 import java.util.Optional;
 
 public class SkinsManager {
-    private static final SkinsManager instance = new SkinsManager();
+    private static SkinsManager instance = new SkinsManager();
     private final List<Skin> skinsDisponiveis = new LinkedList<>();
 
-    private SkinsManager() {
-        // Inicializa o "estoque" com algumas skins.
-        // Skins Raras
+    public SkinsManager() {
+        // Inicializa o "estoque" com skins de ID único.
+
+        // Skins Raras - 50 de cada
         for (int i = 0; i < 50; i++) {
-            skinsDisponiveis.add(new Skin("FOGO_R", "Fogo Infernal", "Raro"));
-            skinsDisponiveis.add(new Skin("AGUA_R", "Tsunami", "Raro"));
-            skinsDisponiveis.add(new Skin("NATUREZA_R", "Avatar da Floresta", "Raro"));
+            skinsDisponiveis.add(new Skin("FOGO_R_" + i, "Fogo Infernal", "Raro"));
+            skinsDisponiveis.add(new Skin("AGUA_R_" + i, "Tsunami", "Raro"));
+            skinsDisponiveis.add(new Skin("NATUREZA_R_" + i, "Avatar da Floresta", "Raro"));
         }
-        // Skins Comuns
+
+        // Skins Comuns - 140 de cada
         for (int i = 0; i < 140; i++) {
-            skinsDisponiveis.add(new Skin("FOGO_C" + i, "Chama Simples", "Comum"));
-            skinsDisponiveis.add(new Skin("AGUA_C" + i, "Gota de Orvalho", "Comum"));
-            skinsDisponiveis.add(new Skin("NATUREZA_C" + i, "Folha Verdejante", "Comum"));
+            skinsDisponiveis.add(new Skin("FOGO_C_" + i, "Chama Simples", "Comum"));
+            skinsDisponiveis.add(new Skin("AGUA_C_" + i, "Gota de Orvalho", "Comum"));
+            skinsDisponiveis.add(new Skin("NATUREZA_C_" + i, "Folha Verdejante", "Comum"));
         }
+
+        // Skins Lendárias - 10 de cada
         for (int i = 0; i < 10; i++) {
-            skinsDisponiveis.add(new Skin("FOGO_L", "Hades", "Lendário"));
-            skinsDisponiveis.add(new Skin("AGUA_L", "Neptuno", "Lendário"));
-            skinsDisponiveis.add(new Skin("NATUREZA_L", "Gaia", "Lendário"));
+            skinsDisponiveis.add(new Skin("FOGO_L_" + i, "Hades", "Lendário"));
+            skinsDisponiveis.add(new Skin("AGUA_L_" + i, "Neptuno", "Lendário"));
+            skinsDisponiveis.add(new Skin("NATUREZA_L_" + i, "Gaia", "Lendário"));
         }
 
         // Embaralha o estoque para que a ordem seja aleatória
         Collections.shuffle(skinsDisponiveis);
-        System.out.println("SkinsManager inicializado com " + skinsDisponiveis.size() + " skins.");
+        System.out.println("SkinsManager inicializado com " + skinsDisponiveis.size() + " skins únicas.");
     }
 
     public static SkinsManager getInstance() {
@@ -61,5 +65,10 @@ public class SkinsManager {
 
     public synchronized int getSkinsRestantes() {
         return skinsDisponiveis.size();
+    }
+
+    public static void resetInstanceForTesting() {
+        System.out.println("!!! RESETANDO O SKINS MANAGER PARA TESTES !!!");
+        instance = new SkinsManager();
     }
 }

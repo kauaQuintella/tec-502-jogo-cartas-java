@@ -8,10 +8,12 @@ import java.net.Socket;
 
 public class TCPServerMain {
 
+    private ServerSocket serverSocket;
+
     public TCPServerMain() throws IOException {
 
         // Create a server socket listening on port 2020
-        ServerSocket serverSocket = new ServerSocket(2020, 50, java.net.InetAddress.getByName("0.0.0.0"));
+        serverSocket = new ServerSocket(2020, 50, java.net.InetAddress.getByName("0.0.0.0"));
         System.out.println("Servidor iniciado em 0.0.0.0 na porta 2020. Aguardando conexões...");
 
         // Loop to continuously listen for new client connections
@@ -22,6 +24,14 @@ public class TCPServerMain {
             PlayerThread playerThread = new PlayerThread(socket);
             Thread thread = new Thread(playerThread);
             thread.start();
+        }
+
+    }
+
+    public void stop() throws IOException {
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            serverSocket.close();
+            System.out.println("ServerSocket encerrado.");
         }
     }
 
@@ -34,4 +44,6 @@ public class TCPServerMain {
             e.printStackTrace();
         }
     }
+
+
 }

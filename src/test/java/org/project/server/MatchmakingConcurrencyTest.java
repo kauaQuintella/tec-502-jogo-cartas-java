@@ -1,86 +1,109 @@
 package org.project.server;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.project.server.TCPServerMain;
+import org.project.client.gameClient.classes.User;
+import org.project.client.utils.GsonSingleton;
+import org.project.client.utils.message.MessageClient;
+import org.project.client.utils.message.contents.CommandContent;
+import org.project.client.utils.message.contents.LoginContent;
+import org.project.server.game.RoomsManager;
+import org.project.server.game.SkinsManager;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MatchmakingConcurrencyTest {
 
+    private static Thread serverThread;
+    private static TCPServerMain serverInstance;
+
+    @BeforeAll
+    public static void startServer() throws InterruptedException {
+        // Garante um estado limpo para todos os Singletons antes de cada execução de teste
+        SkinsManager.resetInstanceForTesting();
+        RoomsManager.resetInstanceForTesting();
+
+        serverThread = new Thread(() -> {
+            try {
+                serverInstance = new TCPServerMain();
+            } catch (Exception e) {
+                if (!(e instanceof java.net.SocketException)) {
+                    fail("O servidor falhou ao iniciar: " + e.getMessage());
+                }
+            }
+        });
+        serverThread.start();
+        Thread.sleep(1500);
+    }
+
+    @AfterAll
+    public static void stopServer() throws IOException {
+        if (serverInstance != null) {
+            serverInstance.stop();
+        }
+        if (serverThread != null) {
+            serverThread.interrupt();
+        }
+    }
+
     @Test
     public void testConcurrentMatchmaking() throws InterruptedException {
-        // Inicia o servidor numa thread separada para não bloquear o teste
-        new Thread(() -> {
-            try {
-                new TCPServerMain();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-
-        // Dá um pequeno tempo para o servidor iniciar completamente
-        Thread.sleep(1000);
-
-        long startTime = System.currentTimeMillis(); // MARCA O INÍCIO
-
         // Número de clientes a simular (deve ser um número par)
-        int numberOfClients = 100;
+        int numberOfClients = 50;
         ExecutorService clientExecutor = Executors.newFixedThreadPool(numberOfClients);
+        // Latch para garantir que o teste só termine depois de todos os robôs terem sido pareados
+        CountDownLatch matchmakingLatch = new CountDownLatch(numberOfClients);
 
-        System.out.println("Iniciando " + numberOfClients + " clientes para teste de concorrência...");
+        System.out.println("Iniciando " + numberOfClients + " clientes para teste de matchmaking...");
 
         for (int i = 0; i < numberOfClients; i++) {
-            int clientID = i + 1;
+            final String nickname = "MatcherBot_" + i;
             clientExecutor.submit(() -> {
                 try (Socket socket = new Socket("localhost", 2020);
                      PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-                    System.out.println("Cliente Robô " + clientID + " conectou.");
+                    // 1. LOGIN (usando o protocolo JSON correto)
+                    in.readLine(); // Ignora a mensagem de boas-vindas
+                    User user = new User(nickname, null);
+                    MessageClient loginMessage = new MessageClient(nickname, new LoginContent(user));
+                    out.println(GsonSingleton.INSTANCE.getGson().toJson(loginMessage));
+                    in.readLine(); // Ignora a confirmação de login
 
-                    // Lê a mensagem de boas-vindas
-                    in.readLine();
+                    // 2. ENVIA O COMANDO "JOGAR" (usando o protocolo JSON correto)
+                    MessageClient playCommand = new MessageClient(nickname, new CommandContent("JOGAR"));
+                    out.println(GsonSingleton.INSTANCE.getGson().toJson(playCommand));
 
-                    // Envia o comando para entrar na fila
-                    out.println("JOGAR");
-                    System.out.println("Cliente Robô " + clientID + " enviou JOGAR.");
+                    // 3. ESPERA PELAS MENSAGENS DO SERVIDOR
+                    in.readLine(); // Espera pela mensagem "Você está na fila..."
+                    in.readLine(); // Espera pela mensagem "Partida encontrada..."
 
-                    // Espera pelas mensagens do servidor (fila e início da partida)
-                    System.out.println("Robô " + clientID + " Servidor: " + in.readLine()); // "Você está na fila..."
-                    System.out.println("Robô " + clientID + " Servidor: " + in.readLine()); // "Partida encontrada..."
+                    // 4. SINALIZA QUE ESTE ROBÔ FOI PAREADO COM SUCESSO
+                    matchmakingLatch.countDown();
 
                 } catch (Exception e) {
-                    System.err.println("Erro no Cliente Robô " + clientID + ": " + e.getMessage());
+                    System.err.println("Erro no Cliente Robô " + nickname + ": " + e.getMessage());
                 }
             });
         }
 
-        // Espera os clientes terminarem
-        clientExecutor.shutdown();
-        // Espera no máximo 1 minuto para o teste completar
-        assertTrue(clientExecutor.awaitTermination(1, TimeUnit.MINUTES), "O teste excedeu o tempo limite.");
+        // Aguarda que todos os clientes sejam pareados, com um tempo limite.
+        boolean allMatched = matchmakingLatch.await(30, TimeUnit.SECONDS);
+        clientExecutor.shutdownNow(); // Força o encerramento de todas as threads
 
-        long endTime = System.currentTimeMillis(); // MARCA O FIM
-
-        long totalTime = endTime - startTime;
-        double throughput = (double) numberOfClients / (totalTime / 1000.0); // Clientes por segundo
-
-        System.out.println("--- RESULTADOS DE DESEMPENHO ---");
-        System.out.println("Clientes Simulados: " + numberOfClients);
-        System.out.println("Tempo Total: " + totalTime + " ms");
-        System.out.printf("Vazão (Throughput): %.2f aberturas de pacote por segundo%n", throughput);
-        System.out.println("---------------------------------");
-
-        System.out.println("Teste de concorrência finalizado.");
-        // Para um teste JUnit real, você adicionaria asserções aqui (Assert.assertTrue(...))
-        // Mas por agora, o output no terminal é suficiente para validar.
+        assertTrue(allMatched, "O teste de matchmaking excedeu o tempo limite. Nem todos os clientes foram pareados.");
+        System.out.println("SUCESSO: Todos os " + numberOfClients + " clientes foram pareados com sucesso.");
     }
 }

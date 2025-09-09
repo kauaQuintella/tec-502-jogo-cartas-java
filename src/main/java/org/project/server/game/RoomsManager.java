@@ -6,8 +6,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class RoomsManager {
-    private static final RoomsManager instance = new RoomsManager();
-    private final BlockingQueue<PlayerThread> waitingQueue = new LinkedBlockingQueue<>(2); // Fila para 2 jogadores
+    private static RoomsManager instance = new RoomsManager();
+    private final BlockingQueue<PlayerThread> waitingQueue = new LinkedBlockingQueue<>(2);
     private MessageServer message;
 
     private RoomsManager() {}
@@ -39,5 +39,10 @@ public class RoomsManager {
             Thread.currentThread().interrupt();
             System.err.println("A fila de espera foi interrompida.");
         }
+    }
+
+    public static void resetInstanceForTesting() {
+        System.out.println("!!! RESETANDO O ROOMS MANAGER PARA TESTES !!!");
+        instance = new RoomsManager();
     }
 }
