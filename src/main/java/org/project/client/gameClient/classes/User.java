@@ -7,7 +7,12 @@ public class User {
 
     public User(String nickname, Inventory inventory) {
         this.nickname = nickname;
-        this.inventory = inventory;
+
+        if (inventory == null) {
+            this.inventory = new Inventory(); // Cria um inventário vazio
+        } else {
+            this.inventory = inventory;
+        }
     }
 
     public String getNickname() {return nickname;}
